@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
+import { API_BASE_URL } from "@/lib/api/client";
 
 interface User {
   id: string;
@@ -20,6 +21,12 @@ interface AuthState {
     password: string,
     roleType: "admin" | "customer",
   ) => Promise<boolean>;
+  register: (
+    name: string,
+    email: string,
+    password: string,
+    phone?: string,
+  ) => Promise<boolean>;
   logout: () => Promise<void>;
   clearError: () => void;
 }
@@ -35,8 +42,7 @@ export const useAuthStore = create<AuthState>()(
       login: async (email, password, roleType) => {
         set({ isLoading: true, error: null });
         try {
-          // Sesuaikan URL backend Anda di sini (port 8000)
-          const response = await fetch("http://localhost:8000/auth/login", {
+          const response = await fetch(`${API_BASE_URL}/auth/login`, {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
@@ -70,6 +76,44 @@ export const useAuthStore = create<AuthState>()(
         } catch (error: any) {
           set({
             error: error.message || "Terjadi kesalahan saat login",
+            isLoading: false,
+            isAuthenticated: false,
+          });
+          return false;
+        }
+      },
+
+      register: async (name, email, password, phone) => {
+        set({ isLoading: true, error: null });
+        try {
+          const response = await fetch(`${API_BASE_URL}/auth/register`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              name,
+              email,
+              password,
+              phone: phone?.trim() || null,
+            }),
+          });
+
+          const data = await response.json().catch(() => null);
+          if (!response.ok) {
+            throw new Error(
+              data?.error?.message || data?.message || "Registrasi gagal",
+            );
+          }
+
+          localStorage.setItem("accessToken", data.accessToken);
+          if (data.refreshToken) {
+            localStorage.setItem("refreshToken", data.refreshToken);
+          }
+
+          set({ user: data.user, isAuthenticated: true, isLoading: false });
+          return true;
+        } catch (error: any) {
+          set({
+            error: error.message || "Terjadi kesalahan saat registrasi",
             isLoading: false,
             isAuthenticated: false,
           });
