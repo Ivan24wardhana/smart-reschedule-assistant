@@ -6,28 +6,36 @@ export const packageSchema = z.object({
   description: z.string().optional().nullable(),
   price: z.coerce
     .number({
-      required_error: "Harga wajib diisi",
-      invalid_type_error: "Harga harus berupa angka",
+      error: (issue) =>
+        issue.input === undefined || issue.input === ""
+          ? "Harga wajib diisi"
+          : "Harga harus berupa angka",
     })
     .positive("Harga harus lebih dari 0"),
   totalSessions: z.coerce
     .number({
-      required_error: "Total sesi wajib diisi",
-      invalid_type_error: "Total sesi harus berupa angka",
+      error: (issue) =>
+        issue.input === undefined || issue.input === ""
+          ? "Total sesi wajib diisi"
+          : "Total sesi harus berupa angka",
     })
     .int("Total sesi harus berupa bilangan bulat")
     .positive("Total sesi harus lebih dari 0"),
   validityDays: z.coerce
     .number({
-      required_error: "Masa berlaku wajib diisi",
-      invalid_type_error: "Masa berlaku harus berupa angka",
+      error: (issue) =>
+        issue.input === undefined || issue.input === ""
+          ? "Masa berlaku wajib diisi"
+          : "Masa berlaku harus berupa angka",
     })
     .int("Masa berlaku harus berupa bilangan bulat")
     .positive("Masa berlaku harus lebih dari 0"),
   status: z.enum(["active", "inactive", "archived"] as const).default("active"),
 });
 
-export type PackageFormData = z.infer<typeof packageSchema>;
+// Input = nilai mentah dari form (sebelum coerce), Data = hasil setelah divalidasi
+export type PackageFormInput = z.input<typeof packageSchema>;
+export type PackageFormData = z.output<typeof packageSchema>;
 
 // Tipe data (DTO) yang sesuai dengan respons backend
 export interface PackageDTO {

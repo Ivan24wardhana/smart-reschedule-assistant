@@ -5,6 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import {
   packageSchema,
   type PackageFormData,
+  type PackageFormInput,
   type PackageDTO,
 } from "../schemas";
 import { useCatalogStore } from "../store/useCatalogStore";
@@ -38,7 +39,7 @@ export function PackageForm({ packageData }: PackageFormProps) {
     control,
     setValue,
     formState: { errors },
-  } = useForm<PackageFormData>({
+  } = useForm<PackageFormInput, unknown, PackageFormData>({
     resolver: zodResolver(packageSchema),
     defaultValues: isEditing
       ? {
@@ -148,7 +149,7 @@ export function PackageForm({ packageData }: PackageFormProps) {
                 type="text"
                 className="w-full px-3 py-2 border border-[#E2E8F0] rounded-md text-sm"
                 placeholder="500.000"
-                value={formatNumberInput(value || "")}
+                value={formatNumberInput((value as string | number | undefined) || "")}
                 onChange={(e) => {
                   const rawValue = parseNumberString(e.target.value);
                   if (/^\d*$/.test(rawValue)) {

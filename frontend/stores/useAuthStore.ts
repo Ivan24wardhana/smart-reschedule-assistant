@@ -18,7 +18,6 @@ interface AuthState {
 
   _hasHydrated: boolean;
   setHasHydrated: (state: boolean) => void;
-  // Fungsi penahan agar request API tidak menembak tanpa token
   waitForHydration: () => Promise<void>;
 
   login: (email: string, password: string, role: string) => Promise<boolean>;
@@ -40,7 +39,6 @@ export const useAuthStore = create<AuthState>()(
       _hasHydrated: false,
       setHasHydrated: (state) => set({ _hasHydrated: state }),
 
-      // PROMISE: Tunggu sampai _hasHydrated berubah jadi true
       waitForHydration: async () => {
         if (get()._hasHydrated) return;
         return new Promise<void>((resolve) => {
@@ -63,7 +61,6 @@ export const useAuthStore = create<AuthState>()(
             body: JSON.stringify({ email, password, role }),
           });
           get().setSession(response.user, response.accessToken);
-
           return true;
         } catch (error: any) {
           set({ error: error.message || "Gagal masuk.", isLoading: false });
@@ -102,7 +99,6 @@ export const useAuthStore = create<AuthState>()(
         isAuthenticated: state.isAuthenticated,
       }),
       onRehydrateStorage: () => (state) => {
-        // Tunda setHasHydrated sedikit agar React memiliki waktu bernapas
         setTimeout(() => state?.setHasHydrated(true), 50);
       },
     },
