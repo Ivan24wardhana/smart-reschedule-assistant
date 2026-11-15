@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useCatalogStore } from "../store/useCatalogStore";
 import { useModalStore } from "@/stores/useModalStore";
+import { useAuthStore } from "@/stores/useAuthStore";
 import { DataTable } from "@/components/shared/DataTable";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { Button } from "@/components/ui/button";
@@ -20,16 +21,18 @@ export function PackageTable() {
     updatePackage,
   } = useCatalogStore();
   const { openModal, closeModal } = useModalStore();
+  const { _hasHydrated, isAuthenticated } = useAuthStore();
 
-  const [isDeleting, setIsDeleting] = useState(false);
+  const [isDeleting,] = useState(false);
 
   useEffect(() => {
+    if (!_hasHydrated || !isAuthenticated) return;
+
     const controller = new AbortController();
     fetchPackages(undefined, controller.signal);
     return () => controller.abort();
-  }, [fetchPackages]);
+  }, [fetchPackages, _hasHydrated, isAuthenticated]);
 
-  // FUNGSI HAPUS: Menggunakan Modal Internal
   const handleDelete = (pkg: PackageDTO) => {
     openModal("confirm", {
       title: "Hapus Paket",
@@ -42,7 +45,6 @@ export function PackageTable() {
         }));
         try {
           await updatePackage(pkg.id, { status: "archived" });
-
           closeModal();
           setTimeout(() => {
             toast.success(`Paket "${pkg.name}" berhasil dihapus.`);
@@ -101,15 +103,12 @@ export function PackageTable() {
       header: "Aksi",
       render: (row: PackageDTO) => (
         <div className="flex gap-2">
-          {/* Tombol Edit */}
           <Button
             variant="outline"
             size="sm"
             onClick={() => openModal("package-form", { packageData: row })}>
             <Edit size={14} className="mr-1.5" /> Edit
           </Button>
-
-          {/* Tombol Hapus */}
           <Button
             variant="outline"
             size="sm"
@@ -120,7 +119,7 @@ export function PackageTable() {
         </div>
       ),
     },
-  ]; 
+  ];
 
   return (
     <div className="space-y-4">
@@ -132,14 +131,20 @@ export function PackageTable() {
         </Button>
       </div>
 
-      <DataTable
-        columns={columns}
-        data={visiblePackages}
-        status={packagesStatus}
-        error={packagesError}
-        onRetry={() => fetchPackages()}
-        emptyMessage="Belum ada paket yang ditambahkan."
-      />
+      {!_hasHydrated ? (
+        <div className="p-10 text-center text-[#64748B] bg-white border border-[#E2E8F0] rounded-xl">
+          Memuat sesi yang tersimpan...
+        </div>
+      ) : (
+        <DataTable
+          columns={columns}
+          data={visiblePackages}
+          status={packagesStatus}
+          error={packagesError}
+          onRetry={() => fetchPackages()}
+          emptyMessage="Belum ada paket yang ditambahkan."
+        />
+      )}
     </div>
   );
 }

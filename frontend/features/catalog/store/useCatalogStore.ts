@@ -27,12 +27,9 @@ export const useCatalogStore = create<CatalogState>((set, get) => ({
     set({ packagesStatus: "loading", packagesError: null });
     try {
       const query = status ? `?status=${status}` : "";
-      // Ambil token dari localStorage
-      const token = localStorage.getItem("accessToken") || undefined;
-
+      // Tidak perlu lagi memanggil localStorage di sini, apiClient akan mengurusnya
       const data = await apiClient<PackageDTO[]>(`/packages${query}`, {
         signal,
-        token,
       });
       set({ packages: data, packagesStatus: "success" });
     } catch (error: any) {
@@ -47,11 +44,9 @@ export const useCatalogStore = create<CatalogState>((set, get) => ({
   createPackage: async (data) => {
     set({ packagesStatus: "loading", packagesError: null });
     try {
-      const token = localStorage.getItem("accessToken") || undefined;
       await apiClient("/packages", {
         method: "POST",
         body: JSON.stringify(data),
-        token,
       });
       await get().fetchPackages();
     } catch (error: any) {
@@ -66,11 +61,9 @@ export const useCatalogStore = create<CatalogState>((set, get) => ({
   updatePackage: async (id, data) => {
     set({ packagesStatus: "loading", packagesError: null });
     try {
-      const token = localStorage.getItem("accessToken") || undefined;
       await apiClient(`/packages/${id}`, {
         method: "PATCH",
         body: JSON.stringify(data),
-        token,
       });
       await get().fetchPackages();
     } catch (error: any) {
@@ -83,9 +76,5 @@ export const useCatalogStore = create<CatalogState>((set, get) => ({
   },
 
   reset: () =>
-    set({
-      packages: [],
-      packagesStatus: "idle",
-      packagesError: null,
-    }),
+    set({ packages: [], packagesStatus: "idle", packagesError: null }),
 }));
