@@ -1,4 +1,5 @@
 import { ApiError } from "./errors";
+import { useAuthStore } from "@/stores/useAuthStore";
 
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
@@ -13,9 +14,15 @@ export async function apiClient<T>(
 ): Promise<T> {
   const { token, headers, ...customOptions } = options;
 
+  // 1. TUNGGU HIDRASI SELESAI SEBELUM MENGAMBIL TOKEN
+  await useAuthStore.getState().waitForHydration();
+
+  // 2. Ambil token yang kini sudah dijamin ter-load dengan benar
+  const authToken = token || useAuthStore.getState().getToken();
+
   const defaultHeaders: Record<string, string> = {
     "Content-Type": "application/json",
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
     ...(headers as Record<string, string>),
   };
 
@@ -24,8 +31,18 @@ export async function apiClient<T>(
     ...customOptions,
   });
 
-  // Jika response tidak OK, parse pesan error dari backend
   if (!response.ok) {
+    if (response.status === 401) {
+      // Hanya logout jika endpointnya bukan /auth/login
+      if (!endpoint.includes("/auth/login")) {
+        useAuthStore.getState().logout();
+      }
+      throw new ApiError(
+        "Sesi Anda telah berakhir, silakan login kembali.",
+        401,
+      );
+    }
+
     let errorData: any;
     try {
       errorData = await response.json();
@@ -42,10 +59,6 @@ export async function apiClient<T>(
     );
   }
 
-  // Jika status 204 No Content
-  if (response.status === 204) {
-    return {} as T;
-  }
-
+  if (response.status === 204) return {} as T;
   return response.json();
 }
