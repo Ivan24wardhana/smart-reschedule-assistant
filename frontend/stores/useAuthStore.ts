@@ -1,7 +1,8 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
+import { apiClient } from "@/lib/api/client";
 
-interface User {
+export interface AuthUser {
   id: string;
   name: string;
   email: string;
@@ -9,86 +10,101 @@ interface User {
 }
 
 interface AuthState {
-  user: User | null;
+  user: AuthUser | null;
+  token: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   error: string | null;
 
-  // Aksi
-  login: (
-    email: string,
-    password: string,
-    roleType: "admin" | "customer",
-  ) => Promise<boolean>;
-  logout: () => Promise<void>;
+  _hasHydrated: boolean;
+  setHasHydrated: (state: boolean) => void;
+  // Fungsi penahan agar request API tidak menembak tanpa token
+  waitForHydration: () => Promise<void>;
+
+  login: (email: string, password: string, role: string) => Promise<boolean>;
+  setSession: (user: AuthUser, token: string) => void;
+  logout: () => void;
   clearError: () => void;
+  getToken: () => string | undefined;
 }
 
 export const useAuthStore = create<AuthState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       user: null,
+      token: null,
       isAuthenticated: false,
       isLoading: false,
       error: null,
 
-      login: async (email, password, roleType) => {
+      _hasHydrated: false,
+      setHasHydrated: (state) => set({ _hasHydrated: state }),
+
+      // PROMISE: Tunggu sampai _hasHydrated berubah jadi true
+      waitForHydration: async () => {
+        if (get()._hasHydrated) return;
+        return new Promise<void>((resolve) => {
+          const unsubscribe = useAuthStore.subscribe((state) => {
+            if (state._hasHydrated) {
+              unsubscribe();
+              resolve();
+            }
+          });
+        });
+      },
+
+      getToken: () => get().token || undefined,
+
+      login: async (email, password, role) => {
         set({ isLoading: true, error: null });
         try {
-          // Sesuaikan URL backend Anda di sini (port 8000)
-          const response = await fetch("http://localhost:8000/auth/login", {
+          const response = await apiClient<any>("/auth/login", {
             method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ email, password }),
+            body: JSON.stringify({ email, password, role }),
           });
+          get().setSession(response.user, response.accessToken);
 
-          if (!response.ok) {
-            throw new Error("Invalid credentials");
-          }
-
-          const data = await response.json();
-
-          // Validasi tambahan: Pastikan role cocok dengan portal yang diloginkan
-          if (data.user.role !== roleType) {
-            throw new Error(`Akses ditolak. Anda bukan ${roleType}.`);
-          }
-
-          // Simpan token di localStorage (PENTING untuk request selanjutnya)
-          localStorage.setItem("accessToken", data.accessToken);
-          if (data.refreshToken) {
-            localStorage.setItem("refreshToken", data.refreshToken);
-          }
-
-          set({
-            user: data.user,
-            isAuthenticated: true,
-            isLoading: false,
-          });
           return true;
         } catch (error: any) {
-          set({
-            error: error.message || "Terjadi kesalahan saat login",
-            isLoading: false,
-            isAuthenticated: false,
-          });
+          set({ error: error.message || "Gagal masuk.", isLoading: false });
           return false;
         }
       },
 
-      logout: async () => {
-        // Hapus token dari penyimpanan lokal
-        localStorage.removeItem("accessToken");
-        localStorage.removeItem("refreshToken");
-        set({ user: null, isAuthenticated: false, error: null });
+      clearError: () => set({ error: null }),
+
+      setSession: (user, token) => {
+        set({
+          user,
+          token,
+          isAuthenticated: true,
+          isLoading: false,
+          error: null,
+        });
       },
 
-      clearError: () => set({ error: null }),
+      logout: () => {
+        set({ user: null, token: null, isAuthenticated: false, error: null });
+      },
     }),
     {
-      name: "auth-storage", // Nama key di localStorage
+      name: "gymnasyum-auth",
       storage: createJSONStorage(() => localStorage),
+      version: 1,
+      migrate: (persistedState: any, version: number) => {
+        if (version === 0)
+          return { user: null, token: null, isAuthenticated: false };
+        return persistedState;
+      },
+      partialize: (state) => ({
+        user: state.user,
+        token: state.token,
+        isAuthenticated: state.isAuthenticated,
+      }),
+      onRehydrateStorage: () => (state) => {
+        // Tunda setHasHydrated sedikit agar React memiliki waktu bernapas
+        setTimeout(() => state?.setHasHydrated(true), 50);
+      },
     },
   ),
 );

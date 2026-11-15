@@ -34,6 +34,7 @@ export default function AdminLoginPage() {
               src="/logo-gymnasyum.webp"
               alt="Gymnasyum Logo"
               fill
+              sizes="80px"
               className="object-contain"
               priority
             />
