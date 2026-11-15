@@ -20,7 +20,7 @@ export function ConfirmModalContent({
   return (
     <div className="space-y-6">
       <p className="text-[#1E293B] font-medium">{message}</p>
-
+      
       <div className="flex justify-end gap-3 pt-4 border-t border-[#E2E8F0]">
         <Button
           type="button"

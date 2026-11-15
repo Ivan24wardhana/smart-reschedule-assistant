@@ -4,6 +4,7 @@ import { useModalStore } from "@/stores/useModalStore";
 import { DynamicModal } from "@/components/shared/DynamicModal";
 import { PackageForm } from "@/features/catalog/components/PackageForm";
 import { ConfirmModalContent } from "@/components/shared/ConfirmModalContent";
+import { MemberForm } from "@/features/members/components/MemberForm";
 
 export function AdminModalHost() {
   const { isOpen, type, props, closeModal } = useModalStore();
@@ -29,6 +30,12 @@ export function AdminModalHost() {
           isSubmitting={props.isSubmitting}
         />
       );
+      break;
+
+    case "member-form":
+      title = "Ubah Status Pengguna";
+      description = "Ubah hak akses keanggotaan pengguna ini.";
+      content = <MemberForm memberData={props.memberData} />;
       break;
 
     default:

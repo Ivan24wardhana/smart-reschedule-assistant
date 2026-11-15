@@ -1,34 +1,18 @@
 import { cn } from "@/lib/utils";
-
-type StatusType = "package" | "member" | "reschedule" | "booking";
+import { STATUS_CONFIG, type StatusDomain } from "@/lib/constants/status";
 
 interface StatusBadgeProps {
-  type: StatusType;
+  type: StatusDomain;
   status: string;
   className?: string;
 }
 
 export function StatusBadge({ type, status, className }: StatusBadgeProps) {
-  let label = status;
-  let colorClass = "bg-gray-100 text-gray-700 border-gray-200";
+  const config = STATUS_CONFIG[type]?.[status];
 
-  // Mapping untuk Katalog Paket
-  if (type === "package") {
-    switch (status) {
-      case "active":
-        label = "Aktif";
-        colorClass = "bg-[#65C466]/10 text-[#52A353] border-[#65C466]/20";
-        break;
-      case "inactive":
-        label = "Tidak Aktif";
-        colorClass = "bg-orange-50 text-orange-600 border-orange-100";
-        break;
-      case "archived":
-        label = "Diarsipkan";
-        colorClass = "bg-gray-100 text-gray-500 border-gray-200";
-        break;
-    }
-  }
+  const label = config?.label || status;
+  const colorClass =
+    config?.color || "bg-gray-100 text-gray-700 border-gray-200";
 
   return (
     <span
