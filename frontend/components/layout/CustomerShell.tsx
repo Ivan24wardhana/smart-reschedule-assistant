@@ -1,3 +1,4 @@
+// frontend/components/layout/CustomerShell.tsx
 "use client";
 
 import Link from "next/link";
@@ -5,6 +6,7 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { useSidebarStore } from "@/stores/useSidebarStore";
+import { CustomerModalHost } from "@/components/layout/CustomerModalHost";
 import {
   Menu,
   X,
@@ -20,7 +22,6 @@ export function CustomerShell({ children }: { children: React.ReactNode }) {
   const { isOpen, toggle, close } = useSidebarStore();
   const pathname = usePathname();
 
-  // Menu Customer sesuai PRD
   const menuItems = [
     { href: "/customer", label: "Jadwal Saya", icon: Calendar },
     { href: "/customer/paket", label: "Paket & Kuota", icon: Package },
@@ -32,7 +33,7 @@ export function CustomerShell({ children }: { children: React.ReactNode }) {
       {/* Overlay Sidebar Mobile */}
       {isOpen && (
         <div
-          className="fixed inset-0 bg-black/50 z-40 lg:hidden transition-opacity"
+          className="fixed inset-0 bg-black/50 z-40 lg:hidden transition-opacity cursor-pointer"
           onClick={close}
         />
       )}
@@ -44,19 +45,20 @@ export function CustomerShell({ children }: { children: React.ReactNode }) {
         transform transition-transform duration-300 ease-in-out flex flex-col shadow-sm lg:shadow-none
         ${isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}
       `}>
-        {/* 1. Area Logo Gymnasyum */}
+        {/* 1. Area Logo Gymnasyum (Diperbaiki ukurannya agar proporsional) */}
         <div className="h-16 flex items-center justify-between px-6 border-b border-[#E2E8F0] shrink-0">
           <Link
             href="/customer"
-            className="flex items-center gap-2"
+            className="flex items-center gap-2.5 cursor-pointer group"
             onClick={close}>
-            <div className="relative w-8 h-8">
+            <div className="relative w-9 h-9 flex-shrink-0">
               <Image
-                src="/logo-gymnasyum.webp"
+                src="/logo-gymnasyum.webp" 
                 alt="Logo Gymnasyum"
                 fill
-                sizes="32px"
+                sizes="36px"
                 className="object-contain"
+                priority
               />
             </div>
             <span className="text-xl font-bold text-[#65C466] tracking-tight">
@@ -65,7 +67,7 @@ export function CustomerShell({ children }: { children: React.ReactNode }) {
           </Link>
           <button
             onClick={close}
-            className="lg:hidden text-[#64748B] hover:text-[#1E293B]">
+            className="lg:hidden text-[#64748B] hover:text-[#1E293B] cursor-pointer p-1">
             <X size={20} />
           </button>
         </div>
@@ -91,13 +93,13 @@ export function CustomerShell({ children }: { children: React.ReactNode }) {
               <Link
                 href="/customer/profil"
                 onClick={close}
-                className="flex-1 flex items-center justify-center gap-1.5 py-1.5 bg-white border border-[#E2E8F0] rounded-lg text-xs font-medium text-[#64748B] hover:text-[#1E293B] hover:bg-gray-50 transition-colors shadow-sm">
+                className="flex-1 flex items-center justify-center gap-1.5 py-1.5 bg-white border border-[#E2E8F0] rounded-lg text-xs font-medium text-[#64748B] hover:text-[#1E293B] hover:bg-gray-50 transition-colors shadow-sm cursor-pointer">
                 <Settings size={14} />
                 <span>Profil</span>
               </Link>
               <button
                 onClick={logout}
-                className="flex-1 flex items-center justify-center gap-1.5 py-1.5 bg-white border border-red-100 rounded-lg text-xs font-medium text-red-600 hover:text-red-700 hover:bg-red-50 transition-colors shadow-sm">
+                className="flex-1 flex items-center justify-center gap-1.5 py-1.5 bg-white border border-red-100 rounded-lg text-xs font-medium text-red-600 hover:text-red-700 hover:bg-red-50 transition-colors shadow-sm cursor-pointer">
                 <LogOut size={14} />
                 <span>Keluar</span>
               </button>
@@ -105,7 +107,7 @@ export function CustomerShell({ children }: { children: React.ReactNode }) {
           </div>
         </div>
 
-        {/* 3. Daftar Menu Navigasi Utama */}
+        {/* 3. Daftar Menu Navigasi Utama (Ditambahkan cursor-pointer) */}
         <nav className="flex-1 overflow-y-auto pt-2 pb-6 px-3 space-y-1.5">
           {menuItems.map((item) => {
             const isActive = pathname === item.href;
@@ -116,7 +118,7 @@ export function CustomerShell({ children }: { children: React.ReactNode }) {
                 href={item.href}
                 onClick={close}
                 className={`
-                  relative flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all duration-200
+                  relative flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all duration-200 cursor-pointer
                   ${
                     isActive
                       ? "bg-[#65C466]/10 text-[#65C466] font-semibold"
@@ -139,7 +141,7 @@ export function CustomerShell({ children }: { children: React.ReactNode }) {
         <header className="lg:hidden h-16 bg-white border-b border-[#E2E8F0] flex items-center px-4 shrink-0 z-30">
           <button
             onClick={toggle}
-            className="text-[#64748B] p-2 -ml-2 rounded-lg hover:bg-gray-100 transition-colors">
+            className="text-[#64748B] p-2 -ml-2 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer">
             <Menu size={24} />
           </button>
           <span className="font-semibold text-lg text-[#1E293B] ml-2">
@@ -149,6 +151,9 @@ export function CustomerShell({ children }: { children: React.ReactNode }) {
 
         <div className="flex-1 overflow-auto p-4 lg:p-8">{children}</div>
       </main>
+
+      {/* Host Modal Customer */}
+      <CustomerModalHost />
     </div>
   );
 }

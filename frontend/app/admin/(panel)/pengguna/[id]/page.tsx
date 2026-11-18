@@ -8,6 +8,7 @@ import { PageHeader } from "@/components/shared/PageHeader";
 import { MemberDetail } from "@/features/members/components/MemberDetail";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
+import { LoadingSkeleton } from "@/components/shared/LoadingSkeleton";
 import type { MemberWithUserDTO } from "@/features/members/schemas";
 
 export default function PenggunaDetailPage() {
@@ -16,18 +17,15 @@ export default function PenggunaDetailPage() {
   const router = useRouter();
   const id = params.id as string;
 
-  const { members, fetchMembers } = useMemberStore();
+  const { members, fetchMembers, status } = useMemberStore();
   const [member, setMember] = useState<MemberWithUserDTO | null>(null);
 
   useEffect(() => {
     if (!isHydrated || !isAuthorized) return;
 
-    // Jika data members kosong (karena admin merefresh halaman ini langsung),
-    // fetch ulang data dari API.
     if (members.length === 0) {
       fetchMembers();
     } else {
-      // Cari member berdasarkan ID dari URL
       const found = members.find((m) => m.id === id);
       setMember(found || null);
     }
@@ -51,7 +49,9 @@ export default function PenggunaDetailPage() {
         />
       </div>
 
-      {member ? (
+      {status === "loading" && !member ? (
+        <LoadingSkeleton variant="form" count={1} />
+      ) : member ? (
         <>
           <MemberDetail memberData={member} />
           <div className="bg-white p-10 mt-6 rounded-xl border border-[#E2E8F0] shadow-sm text-center">
@@ -67,7 +67,7 @@ export default function PenggunaDetailPage() {
         </>
       ) : (
         <div className="p-10 text-center text-[#64748B] bg-white border border-[#E2E8F0] rounded-xl">
-          Memuat data pelanggan...
+          Data pelanggan tidak ditemukan.
         </div>
       )}
     </div>

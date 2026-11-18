@@ -5,6 +5,8 @@ import { DynamicModal } from "@/components/shared/DynamicModal";
 import { PackageForm } from "@/features/catalog/components/PackageForm";
 import { ConfirmModalContent } from "@/components/shared/ConfirmModalContent";
 import { MemberForm } from "@/features/members/components/MemberForm";
+import { CoachForm } from "@/features/coaches/components/CoachForm";
+import { ScheduleForm } from "@/features/schedules/components/ScheduleForm";
 
 export function AdminModalHost() {
   const { isOpen, type, props, closeModal } = useModalStore();
@@ -36,6 +38,19 @@ export function AdminModalHost() {
       title = "Ubah Status Pengguna";
       description = "Ubah hak akses keanggotaan pengguna ini.";
       content = <MemberForm memberData={props.memberData} />;
+      break;
+
+    case "coach-form":
+      title = props.coachData ? "Ubah Pelatih" : "Tambah Pelatih Baru";
+      description =
+        "Masukkan profil pelatih dan relasi layanan yang ditangani.";
+      content = <CoachForm coachData={props.coachData} />;
+      break;
+
+    case "schedule-form":
+      title = props.scheduleData ? "Ubah Jadwal" : "Buat Jadwal Baru";
+      description = "Atur waktu, pelatih, dan kapasitas maksimal sesi latihan.";
+      content = <ScheduleForm scheduleData={props.scheduleData} />;
       break;
 
     default:

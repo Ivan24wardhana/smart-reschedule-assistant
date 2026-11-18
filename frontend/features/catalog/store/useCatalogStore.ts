@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { apiClient } from "@/lib/api/client";
+import * as serviceApi from "@/lib/api/services";
 import type { PackageDTO, PackageFormData } from "../schemas";
 
 type FetchStatus = "idle" | "loading" | "success" | "error";
@@ -15,6 +16,10 @@ interface CatalogState {
   ) => Promise<void>;
   createPackage: (data: PackageFormData) => Promise<void>;
   updatePackage: (id: string, data: Partial<PackageFormData>) => Promise<void>;
+
+  services: serviceApi.ServiceDTO[];
+  fetchServices: (signal?: AbortSignal) => Promise<void>;
+
   reset: () => void;
 }
 
@@ -75,6 +80,27 @@ export const useCatalogStore = create<CatalogState>((set, get) => ({
     }
   },
 
+  services: [],
+  fetchServices: async (signal) => {
+    try {
+      const data = await serviceApi.getServices(signal);
+      set({ services: data });
+    } catch (error: any) {
+      if (error.name !== "AbortError") {
+        console.warn(
+          "Gagal memuat daftar layanan (Endpoint mungkin belum tersedia). Menggunakan data kosong.",
+        );
+        // Berikan data kosong agar komponen UI tidak macet saat menunggu mapping
+        set({ services: [] });
+      }
+    }
+  },
+
   reset: () =>
-    set({ packages: [], packagesStatus: "idle", packagesError: null }),
+    set({
+      packages: [],
+      packagesStatus: "idle",
+      packagesError: null,
+      services: [],
+    }),
 }));

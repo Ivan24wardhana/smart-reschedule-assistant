@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
-import { apiClient } from "@/lib/api/client";
+
 
 export interface AuthUser {
   id: string;
@@ -8,10 +8,10 @@ export interface AuthUser {
   email: string;
   role: "admin" | "customer";
 }
-
 interface AuthState {
   user: AuthUser | null;
   token: string | null;
+  refreshToken: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   error: string | null;
@@ -21,7 +21,8 @@ interface AuthState {
   waitForHydration: () => Promise<void>;
 
   login: (email: string, password: string, role: string) => Promise<boolean>;
-  setSession: (user: AuthUser, token: string) => void;
+  setSession: (user: AuthUser, token: string, refreshToken?: string) => void;
+  setTokens: (accessToken: string, refreshToken: string) => void; // <-- Fungsi pembaruan token
   logout: () => void;
   clearError: () => void;
   getToken: () => string | undefined;
@@ -32,6 +33,7 @@ export const useAuthStore = create<AuthState>()(
     (set, get) => ({
       user: null,
       token: null,
+      refreshToken: null,
       isAuthenticated: false,
       isLoading: false,
       error: null,
@@ -56,11 +58,33 @@ export const useAuthStore = create<AuthState>()(
       login: async (email, password, role) => {
         set({ isLoading: true, error: null });
         try {
-          const response = await apiClient<any>("/auth/login", {
-            method: "POST",
-            body: JSON.stringify({ email, password, role }),
-          });
-          get().setSession(response.user, response.accessToken);
+          const res = await fetch(
+            `${process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000"}/auth/login`,
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ email, password, role }),
+            },
+          );
+
+          if (!res.ok) {
+            let errData: any;
+            try {
+              errData = await res.json();
+            } catch {
+              errData = { message: "Gagal login" };
+            }
+            throw new Error(
+              errData.message || errData.error?.message || "Kredensial salah",
+            );
+          }
+
+          const response = await res.json();
+          get().setSession(
+            response.user,
+            response.accessToken,
+            response.refreshToken,
+          );
           return true;
         } catch (error: any) {
           set({ error: error.message || "Gagal masuk.", isLoading: false });
@@ -70,32 +94,53 @@ export const useAuthStore = create<AuthState>()(
 
       clearError: () => set({ error: null }),
 
-      setSession: (user, token) => {
+      setSession: (user, token, refreshToken) => {
         set({
           user,
           token,
+          refreshToken: refreshToken || null,
           isAuthenticated: true,
           isLoading: false,
           error: null,
         });
       },
 
+      setTokens: (accessToken, refreshToken) => {
+        set({
+          token: accessToken,
+          refreshToken: refreshToken,
+        });
+      },
+
       logout: () => {
-        set({ user: null, token: null, isAuthenticated: false, error: null });
+        set({
+          user: null,
+          token: null,
+          refreshToken: null,
+          isAuthenticated: false,
+          error: null,
+        });
       },
     }),
     {
       name: "gymnasyum-auth",
       storage: createJSONStorage(() => localStorage),
-      version: 1,
+      version: 2,
       migrate: (persistedState: any, version: number) => {
-        if (version === 0)
-          return { user: null, token: null, isAuthenticated: false };
+        if (version < 2) {
+          return {
+            user: persistedState.user || null,
+            token: persistedState.token || null,
+            refreshToken: null,
+            isAuthenticated: persistedState.isAuthenticated || false,
+          };
+        }
         return persistedState;
       },
       partialize: (state) => ({
         user: state.user,
         token: state.token,
+        refreshToken: state.refreshToken,
         isAuthenticated: state.isAuthenticated,
       }),
       onRehydrateStorage: () => (state) => {

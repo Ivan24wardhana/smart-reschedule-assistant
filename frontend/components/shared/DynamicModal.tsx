@@ -29,18 +29,24 @@ export function DynamicModal({
 }: DynamicModalProps) {
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className={cn("sm:max-w-[500px]", className)}>
-        <DialogHeader>
+      <DialogContent
+        className={cn(
+          "sm:max-w-[600px] max-h-[90vh] flex flex-col",
+          className,
+        )}>
+        <DialogHeader className="shrink-0 pb-2">
           <DialogTitle className="text-xl text-[#1E293B]">{title}</DialogTitle>
           {description && (
-            <DialogDescription className="text-[#64748B]">
+            <DialogDescription className="text-xs text-[#64748B]">
               {description}
             </DialogDescription>
           )}
         </DialogHeader>
 
-        {/* Render Form dari Feature akan masuk ke sini */}
-        <div className="py-4">{children}</div>
+        {/* Konten modal fleksibel tanpa scrollbar luar yang kasar */}
+        <div className="flex-1 overflow-y-auto py-1 pr-1 custom-scrollbar">
+          {children}
+        </div>
       </DialogContent>
     </Dialog>
   );

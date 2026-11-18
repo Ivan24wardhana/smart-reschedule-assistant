@@ -1,11 +1,12 @@
 import { create } from "zustand";
 
-// Modal types: bisa ditambahkan tipe baru seiring perkembangan fitur (Fase 3, Fase 4)
 export type ModalType =
   | "package-form"
   | "service-form"
   | "member-form"
-  | "confirm";
+  | "confirm"
+  | "coach-form" 
+  | "schedule-form"; 
 
 interface ModalState {
   isOpen: boolean;

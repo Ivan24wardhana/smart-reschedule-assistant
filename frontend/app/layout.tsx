@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
+import Script from "next/script";
 import "./globals.css";
 import { ToasterProvider } from "@/components/providers/ToasterProvider";
 
-// Menggunakan font Inter sesuai PRD
 const inter = Inter({
   subsets: ["latin"],
   variable: "--font-inter",
@@ -24,6 +24,12 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col font-sans">
         {children}
         <ToasterProvider />
+
+        <Script
+          src="https://app.sandbox.midtrans.com/snap/snap.js"
+          data-client-key={process.env.NEXT_PUBLIC_MIDTRANS_CLIENT_KEY}
+          strategy="beforeInteractive"
+        />
       </body>
     </html>
   );
